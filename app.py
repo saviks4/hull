@@ -23,6 +23,48 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+CUSTOM_CSS = """
+<style>
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2.5rem;
+}
+.hero-banner {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(59, 130, 246, 0.14));
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 14px;
+    padding: 1.1rem 1.4rem;
+    margin-bottom: 1rem;
+}
+.hero-title {
+    font-size: 1.65rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+}
+.hero-sub {
+    font-size: 0.92rem;
+    opacity: 0.85;
+    margin: 0;
+}
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+}
+.pill {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    background: rgba(128, 128, 128, 0.08);
+}
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
 MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_ZIP_TOTAL_BYTES = 15 * 1024 * 1024
 MAX_ZIP_FILES = 25
@@ -30,38 +72,35 @@ MAX_IMAGES = 4
 MAX_TOTAL_TEXT_CHARS = 60_000
 AUTOTEST_TIMEOUT_SEC = 3.0
 
-TEXT_MODELS = [
+CHAT_MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
-    "qwen/qwen3-32b",
 ]
-VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+VISION_MODELS = [
+    "qwen/qwen3.8-27b",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+]
+GUARD_MODELS = [
+    "meta-llama/llama-prompt-guard-2-86m",
+    "meta-llama/llama-prompt-guard-2-22m",
+    "openai/gpt-oss-safeguard-20b",
+]
+STT_MODELS = [
+    "whisper-large-v3-turbo",
+    "whisper-large-v3",
+]
+TTS_MODELS = [
+    "canopylabs/orpheus-v1-english",
+    "canopylabs/orpheus-arabic-saudi",
+]
 
 TEXT_EXTS = {
-    ".txt",
-    ".md",
-    ".py",
-    ".cs",
-    ".html",
-    ".css",
-    ".js",
-    ".ts",
-    ".jsx",
-    ".tsx",
-    ".csv",
-    ".json",
-    ".xml",
-    ".yaml",
-    ".yml",
-    ".toml",
-    ".sql",
-    ".log",
-    ".ini",
-    ".cfg",
-    ".java",
-    ".cpp",
-    ".c",
-    ".h",
+    ".txt", ".md", ".py", ".cs", ".html", ".css", ".js", ".ts", ".jsx", ".tsx",
+    ".csv", ".json", ".xml", ".yaml", ".yml", ".toml", ".sql", ".log", ".ini",
+    ".cfg", ".java", ".cpp", ".c", ".h",
 }
 IMAGE_EXTS = {
     ".png": "image/png",
@@ -69,16 +108,10 @@ IMAGE_EXTS = {
     ".jpeg": "image/jpeg",
     ".webp": "image/webp",
 }
+AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".ogg", ".webm", ".flac"}
 
 SKIP_ARCHIVE_PARTS = {
-    "__macosx",
-    ".git",
-    "node_modules",
-    "__pycache__",
-    ".venv",
-    "venv",
-    ".idea",
-    ".vscode",
+    "__macosx", ".git", "node_modules", "__pycache__", ".venv", "venv", ".idea", ".vscode",
 }
 
 SECRET_PATTERNS = [
@@ -89,67 +122,38 @@ SECRET_PATTERNS = [
 ]
 
 ALLOWED_STDLIB_IMPORTS = {
-    "math",
-    "statistics",
-    "collections",
-    "itertools",
-    "functools",
-    "re",
-    "json",
-    "datetime",
-    "string",
-    "random",
-    "typing",
-    "dataclasses",
-    "decimal",
-    "fractions",
-    "heapq",
-    "bisect",
-    "copy",
-    "enum",
+    "math", "statistics", "collections", "itertools", "functools", "re", "json",
+    "datetime", "string", "random", "typing", "dataclasses", "decimal",
+    "fractions", "heapq", "bisect", "copy", "enum",
 }
 
 BLOCKED_IMPORTS = {
-    "os",
-    "sys",
-    "subprocess",
-    "shutil",
-    "socket",
-    "requests",
-    "urllib",
-    "http",
-    "pathlib",
-    "importlib",
-    "ctypes",
-    "multiprocessing",
-    "threading",
-    "pickle",
-    "builtins",
-    "tempfile",
-    "glob",
+    "os", "sys", "subprocess", "shutil", "socket", "requests", "urllib", "http",
+    "pathlib", "importlib", "ctypes", "multiprocessing", "threading", "pickle",
+    "builtins", "tempfile", "glob",
 }
 
 REVIEW_MODES = {
     "Строгий преподаватель": (
         "Ты строгий и объективный проверяющий преподаватель. Выявляй все логические, "
-        "синтаксические, архитектурные и оформительские недочёты. Обязательно дай чёткий вердикт и исправленный вариант."
+        "синтаксические, архитектурные и оформительские недочёты. Дай чёткий вердикт и исправленный вариант."
     ),
     "Мягкий ментор": (
         "Ты поддерживающий ментор-разработчик. Сначала отметь сильные стороны работы, "
-        "затем бережно и понятно объясни ошибки с наводящими подсказками, а в конце покажи улучшенный вариант."
+        "затем бережно объясни ошибки с подсказками и покажи улучшенный вариант."
     ),
     "Ревью кода и баг-хантинг": (
-        "Ты senior-ревьюер. Фокусируйся на краевых случаях (edge cases), асимптотической сложности, "
+        "Ты senior-ревьюер. Фокусируйся на граничных случаях (edge cases), сложности алгоритма, "
         "читаемости, обработке исключений, безопасности и потенциальных багах."
     ),
     "Балльная оценка (0–100)": (
-        "Ты экзаменатор. Оцени работу по 100-балльной шкале с обязательной Markdown-таблицей: "
-        "Корректность решения (до 40), Качество кода/логики (до 25), Обработка граничных случаев (до 20), "
-        "Оформление по критериям (до 15). Укажи итоговый балл и за что снижены баллы."
+        "Ты экзаменатор. Оцени работу по 100-балльной шкале с Markdown-таблицей: "
+        "Корректность (до 40), Качество кода/логики (до 25), Граничные случаи (до 20), "
+        "Оформление (до 15). Укажи итоговый балл и причины снижения."
     ),
     "Подготовка к защите": (
-        "Ты принимаешь защиту лабораторной/курсовой работы. После краткого разбора ошибок "
-        "сформируй 5–7 вероятных вопросов преподавателя по этому решению и дай краткие тезисы для уверенного ответа."
+        "Ты принимаешь защиту работы. После краткого разбора ошибок сформируй 5–7 вероятных "
+        "вопросов преподавателя и дай краткие тезисы для уверенного ответа."
     ),
 }
 
@@ -159,26 +163,45 @@ CRITERIA_PRESETS = {
         "1. Логика вынесена в функции с понятными именами и type hints.\n"
         "2. Есть обработка некорректного ввода и граничных случаев.\n"
         "3. Нет глобальных переменных и голого except:.\n"
-        "4. Присутствуют docstrings или краткие комментарии к сложным местам."
+        "4. Присутствуют docstrings или краткие комментарии."
     ),
     "Веб-вёрстка (HTML/CSS/JS)": (
         "1. Семантическая разметка (header, main, section, footer).\n"
-        "2. Атрибуты alt у всех изображений и label у полей формы.\n"
+        "2. Атрибуты alt у изображений и label у полей формы.\n"
         "3. Адаптивность и отсутствие инлайн-стилей.\n"
-        "4. Корректная обработка событий в JS без ошибок в консоли."
+        "4. Корректная обработка событий в JS без ошибок."
     ),
     "SQL-запросы": (
         "1. Корректные JOIN-ы без дублирования строк.\n"
         "2. Отсутствие деструктивных операций без WHERE.\n"
-        "3. Использование алиасов таблиц и читаемое форматирование.\n"
-        "4. Оптимальная фильтрация (WHERE до GROUP BY, агрегаты в HAVING)."
+        "3. Алиасы таблиц и читаемое форматирование.\n"
+        "4. Фильтрация WHERE до GROUP BY, агрегаты в HAVING."
     ),
     "Реферат / отчёт по методичке": (
-        "1. Наличие цели работы, хода выполнения и чётких выводов.\n"
-        "2. Соответствие структуре и объёму методических указаний.\n"
-        "3. Логическая связность, отсутствие воды и фактических противоречий.\n"
-        "4. Оформление таблиц, графиков и ссылок на источники."
+        "1. Наличие цели работы, хода выполнения и выводов.\n"
+        "2. Соответствие структуре и объёму методички.\n"
+        "3. Логическая связность и отсутствие противоречий.\n"
+        "4. Аккуратное оформление таблиц и ссылок."
     ),
+}
+
+BUILTIN_SKILLS = {
+    "🧪 Автотесты Python": {
+        "desc": "Генерирует assert-тесты и запускает их в изолированной песочнице с таймаутом 3 сек.",
+        "prompt": "Обязательно учти результаты автотестов и укажи, какие кейсы упали и почему.",
+    },
+    "📐 Проверка формул и расчётов": {
+        "desc": "Пошагово перепроверяет вычисления, единицы измерения и формулы.",
+        "prompt": "Выполни пошаговую арифметическую и алгебраическую проверку всех формул, расчётов и размерностей.",
+    },
+    "🛡️ Аудит безопасности (Guard + Code)": {
+        "desc": "Проверяет код на уязвимости, утечки секретов и опционально прогоняет через Prompt Guard.",
+        "prompt": "Дополнительно проверь решение на уязвимости (инъекции, утечки ключей, небезопасные вызовы).",
+    },
+    "🎓 Вопросы к защите": {
+        "desc": "Добавляет список вопросов преподавателя и шпаргалку для защиты.",
+        "prompt": "В конце добавь блок «Вопросы к защите»: 5 вероятных вопросов преподавателя и краткие ответы.",
+    },
 }
 
 
@@ -191,41 +214,15 @@ def _safe_import(name: str, globals_: Any = None, locals_: Any = None, fromlist:
 
 SAFE_BUILTINS = {
     "__import__": _safe_import,
-    "abs": abs,
-    "all": all,
-    "any": any,
-    "bool": bool,
-    "dict": dict,
-    "enumerate": enumerate,
-    "filter": filter,
-    "float": float,
-    "int": int,
-    "len": len,
-    "list": list,
-    "map": map,
-    "max": max,
-    "min": min,
-    "pow": pow,
-    "print": print,
-    "range": range,
-    "reversed": reversed,
-    "round": round,
-    "set": set,
-    "sorted": sorted,
-    "str": str,
-    "sum": sum,
-    "tuple": tuple,
-    "zip": zip,
-    "isinstance": isinstance,
-    "issubclass": issubclass,
-    "type": type,
-    "Exception": Exception,
-    "ValueError": ValueError,
-    "TypeError": TypeError,
-    "KeyError": KeyError,
-    "IndexError": IndexError,
-    "ZeroDivisionError": ZeroDivisionError,
-    "AssertionError": AssertionError,
+    "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
+    "enumerate": enumerate, "filter": filter, "float": float, "int": int,
+    "len": len, "list": list, "map": map, "max": max, "min": min,
+    "pow": pow, "print": print, "range": range, "reversed": reversed,
+    "round": round, "set": set, "sorted": sorted, "str": str, "sum": sum,
+    "tuple": tuple, "zip": zip, "isinstance": isinstance, "issubclass": issubclass,
+    "type": type, "Exception": Exception, "ValueError": ValueError,
+    "TypeError": TypeError, "KeyError": KeyError, "IndexError": IndexError,
+    "ZeroDivisionError": ZeroDivisionError, "AssertionError": AssertionError,
 }
 
 
@@ -241,12 +238,24 @@ def get_api_key(user_override: str | None = None) -> str | None:
     return env_key.strip() if env_key else None
 
 
+def fetch_available_groq_models(api_key: str) -> list[str]:
+    client = Groq(api_key=api_key)
+    resp = client.models.list()
+    ids = sorted(m.id for m in (resp.data or []) if getattr(m, "id", None))
+    return ids
+
+
 def audit_code_or_data(ext: str, content: str, label: str) -> list[str]:
     notes: list[str] = []
     lines = content.splitlines()
 
     if len(lines) > 1500:
         notes.append(f"В «{label}» много строк ({len(lines)}) — проверьте структуру и дублирование.")
+
+    for pat in SECRET_PATTERNS:
+        if re.search(pat, content):
+            notes.append(f"В «{label}» обнаружен фрагмент, похожий на API-ключ или токен!")
+            break
 
     if ext == ".py":
         try:
@@ -303,7 +312,12 @@ def audit_code_or_data(ext: str, content: str, label: str) -> list[str]:
     return notes
 
 
-def _parse_single_bytes(name: str, raw: bytes) -> dict[str, Any]:
+def _parse_single_bytes(
+    name: str,
+    raw: bytes,
+    api_key: str | None = None,
+    stt_model: str = "whisper-large-v3-turbo",
+) -> dict[str, Any]:
     ext = Path(name).suffix.lower()
     result: dict[str, Any] = {
         "name": name,
@@ -371,11 +385,34 @@ def _parse_single_bytes(name: str, raw: bytes) -> dict[str, Any]:
         result["text"] = f"[Изображение: {name}, {len(raw)} байт]"
         return result
 
+    if ext in AUDIO_EXTS:
+        if not api_key:
+            result["error"] = f"Для расшифровки аудио «{name}» требуется GROQ_API_KEY."
+            return result
+        try:
+            client = Groq(api_key=api_key)
+            tr = client.audio.transcriptions.create(
+                file=(Path(name).name, raw),
+                model=stt_model,
+            )
+            transcript = getattr(tr, "text", "") or ""
+            result["text"] = f"[Расшифровка аудио {name} ({stt_model})]:\n{transcript}"
+            if not transcript.strip():
+                result["warnings"].append(f"Аудио «{name}» расшифровано как пустой текст.")
+            return result
+        except Exception as exc:
+            result["error"] = f"Ошибка Whisper для «{name}»: {exc}"
+            return result
+
     result["error"] = f"Формат «{ext or 'без расширения'}» для файла «{name}» не поддерживается."
     return result
 
 
-def parse_uploaded_files(uploaded_files: list[Any] | None) -> list[dict[str, Any]]:
+def parse_uploaded_files(
+    uploaded_files: list[Any] | None,
+    api_key: str | None = None,
+    stt_model: str = "whisper-large-v3-turbo",
+) -> list[dict[str, Any]]:
     if not uploaded_files:
         return []
     parsed: list[dict[str, Any]] = []
@@ -422,7 +459,7 @@ def parse_uploaded_files(uploaded_files: list[Any] | None) -> list[dict[str, Any
                             )
                             break
                         inner_bytes = zf.read(info.filename)
-                        inner_res = _parse_single_bytes(f"{name}/{info.filename}", inner_bytes)
+                        inner_res = _parse_single_bytes(f"{name}/{info.filename}", inner_bytes, api_key, stt_model)
                         if inner_res["error"] and "не поддерживается" in inner_res["error"]:
                             inner_res["warnings"].append(inner_res["error"])
                             inner_res["error"] = None
@@ -441,7 +478,7 @@ def parse_uploaded_files(uploaded_files: list[Any] | None) -> list[dict[str, Any
                     }
                 )
         else:
-            parsed.append(_parse_single_bytes(name, raw))
+            parsed.append(_parse_single_bytes(name, raw, api_key, stt_model))
     return parsed
 
 
@@ -478,7 +515,7 @@ def has_unsafe_ast(tree: ast.AST) -> str | None:
     return None
 
 
-def _sandbox_worker(source_code: str, source_name: str, tests_code: str, queue: Any) -> None:
+def _execute_tests_in_memory(source_code: str, source_name: str, tests_code: str) -> dict[str, Any]:
     stdout_buf = io.StringIO()
     env_ns: dict[str, Any] = {"__builtins__": SAFE_BUILTINS}
     try:
@@ -489,15 +526,12 @@ def _sandbox_worker(source_code: str, source_name: str, tests_code: str, queue: 
             assert_nodes = [n for n in ast.walk(test_tree) if isinstance(n, ast.Assert)]
             if not assert_nodes:
                 exec(compile(test_tree, "generated_tests.py", "exec"), env_ns)
-                queue.put(
-                    {
-                        "ran": True,
-                        "summary": f"Тесты для `{source_name}` выполнены успешно.",
-                        "results": [{"name": "Тестовый блок", "passed": True, "detail": "PASS"}],
-                        "stdout": stdout_buf.getvalue()[:2000],
-                    }
-                )
-                return
+                return {
+                    "ran": True,
+                    "summary": f"Тесты для `{source_name}` выполнены успешно.",
+                    "results": [{"name": "Тестовый блок", "passed": True, "detail": "PASS"}],
+                    "stdout": stdout_buf.getvalue()[:2000],
+                }
 
             helper_nodes = [n for n in test_tree.body if not isinstance(n, ast.Assert)]
             if helper_nodes:
@@ -527,42 +561,46 @@ def _sandbox_worker(source_code: str, source_name: str, tests_code: str, queue: 
                     )
 
             passed_cnt = sum(1 for r in results if r["passed"])
-            queue.put(
-                {
-                    "ran": True,
-                    "summary": f"Автотесты для `{source_name}`: пройдено {passed_cnt} из {len(results)}.",
-                    "results": results,
-                    "stdout": stdout_buf.getvalue()[:2000],
-                }
-            )
-    except Exception as exc:
-        queue.put(
-            {
+            return {
                 "ran": True,
-                "summary": f"Ошибка выполнения `{source_name}`: {type(exc).__name__}: {exc}",
-                "results": [{"name": "Выполнение кода", "passed": False, "detail": f"{type(exc).__name__}: {exc}"}],
+                "summary": f"Автотесты для `{source_name}`: пройдено {passed_cnt} из {len(results)}.",
+                "results": results,
                 "stdout": stdout_buf.getvalue()[:2000],
             }
-        )
+    except Exception as exc:
+        return {
+            "ran": True,
+            "summary": f"Ошибка выполнения `{source_name}`: {type(exc).__name__}: {exc}",
+            "results": [{"name": "Выполнение кода", "passed": False, "detail": f"{type(exc).__name__}: {exc}"}],
+            "stdout": stdout_buf.getvalue()[:2000],
+        }
+
+
+def _sandbox_worker(source_code: str, source_name: str, tests_code: str, queue: Any) -> None:
+    queue.put(_execute_tests_in_memory(source_code, source_name, tests_code))
 
 
 def _run_in_subprocess(source_code: str, source_name: str, tests_code: str) -> dict[str, Any]:
-    ctx = multiprocessing.get_context("fork") if hasattr(os, "fork") else multiprocessing.get_context()
-    queue = ctx.Queue()
-    proc = ctx.Process(target=_sandbox_worker, args=(source_code, source_name, tests_code, queue))
-    proc.start()
-    proc.join(timeout=AUTOTEST_TIMEOUT_SEC)
-    if proc.is_alive():
-        proc.terminate()
-        proc.join(timeout=1.0)
-        return {
-            "ran": True,
-            "summary": f"Автотесты для `{source_name}` остановлены по таймауту ({AUTOTEST_TIMEOUT_SEC:.0f} сек) — возможен бесконечный цикл.",
-            "results": [{"name": "Таймаут песочницы", "passed": False, "detail": "TimeoutError"}],
-            "stdout": "",
-        }
-    if not queue.empty():
-        return queue.get()
+    try:
+        ctx = multiprocessing.get_context("fork") if hasattr(os, "fork") else multiprocessing.get_context()
+        queue = ctx.Queue()
+        proc = ctx.Process(target=_sandbox_worker, args=(source_code, source_name, tests_code, queue))
+        proc.start()
+        proc.join(timeout=AUTOTEST_TIMEOUT_SEC)
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(timeout=1.0)
+            return {
+                "ran": True,
+                "summary": f"Автотесты для `{source_name}` остановлены по таймауту ({AUTOTEST_TIMEOUT_SEC:.0f} сек) — возможен бесконечный цикл.",
+                "results": [{"name": "Таймаут песочницы", "passed": False, "detail": "TimeoutError"}],
+                "stdout": "",
+            }
+        if not queue.empty():
+            return queue.get()
+    except Exception:
+        return _execute_tests_in_memory(source_code, source_name, tests_code)
+
     return {
         "ran": False,
         "summary": f"Не удалось получить результат автотестов для `{source_name}`.",
@@ -650,6 +688,28 @@ def generate_and_run_tests(
     return res
 
 
+def run_guard_check(api_key: str, guard_model: str, text: str) -> tuple[bool, str]:
+    if not text.strip():
+        return True, "Текст пуст."
+    try:
+        client = Groq(api_key=api_key)
+        resp = client.chat.completions.create(
+            model=guard_model,
+            temperature=0.0,
+            max_tokens=128,
+            messages=[{"role": "user", "content": text[:3500]}],
+        )
+        verdict = (resp.choices[0].message.content or "").strip()
+        lower_v = verdict.lower()
+        if any(bad in lower_v for bad in ["unsafe", "jailbreak", "injection", "malicious", "1"]):
+            if lower_v == "0" or "benign" in lower_v or "safe" in lower_v and "unsafe" not in lower_v:
+                return True, f"{guard_model}: {verdict}"
+            return False, f"{guard_model} пометил ввод как рискованный: {verdict}"
+        return True, f"{guard_model}: OK ({verdict or 'safe'})"
+    except Exception as exc:
+        return True, f"Guard-проверка пропущена ({exc})"
+
+
 def detect_profile(task_text: str, files_text: str, images_count: int) -> str:
     combined = f"{task_text}\n{files_text[:4000]}".lower()
     if images_count > 0:
@@ -668,6 +728,7 @@ def validate_submission(
     task_text: str,
     criteria_text: str,
     uploaded_files: list[Any] | None,
+    stt_model: str = "whisper-large-v3-turbo",
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -683,7 +744,7 @@ def validate_submission(
         if not api_key.startswith("gsk_"):
             warnings.append("Ключ не начинается с 'gsk_' — проверьте корректность GROQ_API_KEY.")
 
-    parsed_files = parse_uploaded_files(uploaded_files)
+    parsed_files = parse_uploaded_files(uploaded_files, api_key=api_key, stt_model=stt_model)
     if not clean_task and not parsed_files:
         errors.append("Введите текст задания или прикрепите файлы.")
     elif clean_task:
@@ -693,11 +754,15 @@ def validate_submission(
             start=1,
         ):
             warnings.extend(audit_code_or_data(".py", snip, f"фрагмент кода #{idx}"))
+        for pat in SECRET_PATTERNS:
+            if re.search(pat, clean_task):
+                warnings.append("В тексте задания обнаружен фрагмент, похожий на API-ключ!")
+                break
 
     if clean_criteria:
         checks.append(f"Критерии: {len(clean_criteria)} симв.")
     else:
-        warnings.append("Методичка/критерии не заданы — проверка оформления пройдёт по общим стандартам.")
+        warnings.append("Методичка/критерии не заданы — проверка пройдёт по общим стандартам.")
 
     text_blocks: list[str] = []
     images: list[dict[str, str]] = []
@@ -771,9 +836,11 @@ def sanitize_output(answer: str) -> tuple[str, list[str]]:
 def run_evaluation(
     api_key: str,
     model_name: str,
+    vision_model_name: str,
     temperature: float,
     mode_name: str,
     language_pref: str,
+    active_skills_prompts: list[str],
     profile: str,
     task_text: str,
     criteria_text: str,
@@ -788,6 +855,7 @@ def run_evaluation(
         if language_pref == "Авто"
         else f"Отвечай строго на языке: {language_pref}."
     )
+    skills_block = "\n".join(f"- {s}" for s in active_skills_prompts if s.strip())
 
     system_prompt = (
         f"{mode_instruction}\n{lang_line}\n"
@@ -799,6 +867,8 @@ def run_evaluation(
         "5. **Готовое решение / исправленный вариант:** полный рабочий вариант.\n"
         "6. **Уточнения (если нужны):** только критичные вопросы."
     )
+    if skills_block:
+        system_prompt += f"\n\nАКТИВНЫЕ СКИЛЛЫ (выполнить обязательно):\n{skills_block}"
 
     parts = [
         f"ПРОФИЛЬ: {profile}",
@@ -826,7 +896,7 @@ def run_evaluation(
         user_content: Any = [{"type": "text", "text": payload}]
         for img in images:
             user_content.append({"type": "image_url", "image_url": {"url": img["url"]}})
-        chosen_model = VISION_MODEL
+        chosen_model = vision_model_name
     else:
         user_content = payload
         chosen_model = model_name
@@ -840,6 +910,26 @@ def run_evaluation(
         ],
     )
     return response.choices[0].message.content or ""
+
+
+def synthesize_tts(api_key: str, tts_model: str, text: str) -> tuple[bytes | None, str | None]:
+    clean = re.sub(r"[#*`>\[\]()_]", " ", text or "").strip()
+    snippet = clean[:900]
+    if not snippet:
+        return None, "Нет текста для озвучки."
+    try:
+        client = Groq(api_key=api_key)
+        voice = "tara" if "english" in tts_model else "fahad"
+        resp = client.audio.speech.create(
+            model=tts_model,
+            voice=voice,
+            input=snippet,
+            response_format="wav",
+        )
+        audio_bytes = resp.read() if hasattr(resp, "read") else bytes(resp)
+        return audio_bytes, None
+    except Exception as exc:
+        return None, f"Озвучка недоступна для {tts_model}: {exc}"
 
 
 def run_followup_chat(
@@ -924,9 +1014,7 @@ def build_report_html(title: str, mode_name: str, report_md: str) -> str:
       border-radius: 12px; padding: 32px; box-shadow: 0 4px 18px rgba(0,0,0,0.05);
     }}
     .meta {{ color: #57606a; font-size: 14px; margin-bottom: 20px; }}
-    pre {{
-      white-space: pre-wrap; word-break: break-word; font-family: inherit; margin: 0;
-    }}
+    pre {{ white-space: pre-wrap; word-break: break-word; font-family: inherit; margin: 0; }}
     @media print {{
       body {{ background: #fff; padding: 0; }}
       .card {{ border: none; box-shadow: none; padding: 0; }}
@@ -942,6 +1030,7 @@ def build_report_html(title: str, mode_name: str, report_md: str) -> str:
 </html>"""
 
 
+# --- Инициализация session_state ---
 if "last_report" not in st.session_state:
     st.session_state.last_report = None
 if "history" not in st.session_state:
@@ -950,51 +1039,128 @@ if "followup_chat" not in st.session_state:
     st.session_state.followup_chat = []
 if "criteria_text_state" not in st.session_state:
     st.session_state.criteria_text_state = ""
+if "task_text_state" not in st.session_state:
+    st.session_state.task_text_state = ""
+if "custom_skills" not in st.session_state:
+    st.session_state.custom_skills = []
+if "live_models" not in st.session_state:
+    st.session_state.live_models = []
+if "pre_validation" not in st.session_state:
+    st.session_state.pre_validation = None
 
+# --- Боковая панель ---
 with st.sidebar:
-    st.header("⚙️ Настройки ассистента")
+    st.header("⚙️ Центр управления")
     user_api_key = st.text_input(
-        "Groq API Key (необязательно, если задан в Secrets)",
+        "Groq API Key",
         type="password",
-        placeholder="gsk_...",
+        placeholder="gsk_... (или из Secrets)",
     )
     active_key = get_api_key(user_api_key)
     if active_key:
-        st.caption("Ключ подключён ✅")
+        st.caption("Статус ключа: подключён ✅")
     else:
         st.warning("Добавьте GROQ_API_KEY выше или в Secrets.")
 
     review_mode = st.selectbox("Режим проверки", list(REVIEW_MODES.keys()), index=0)
-    selected_model = st.selectbox("Модель для текста и кода", TEXT_MODELS, index=0)
-    language_pref = st.selectbox("Язык ответа", ["Авто", "Русский", "Українська", "English"], index=0)
-    temperature = st.slider("Креативность (temperature)", 0.0, 0.7, 0.2, 0.05)
+
+    chat_choices = list(dict.fromkeys(CHAT_MODELS + [m for m in st.session_state.live_models if "whisper" not in m and "orpheus" not in m and "guard" not in m]))
+    selected_model = st.selectbox("ИИ-модель (текст и код)", chat_choices, index=0)
+
+    if st.button("🔄 Обновить модели с Groq API", use_container_width=True):
+        if not active_key:
+            st.error("Сначала укажите API-ключ.")
+        else:
+            try:
+                st.session_state.live_models = fetch_available_groq_models(active_key)
+                st.success(f"Загружено моделей: {len(st.session_state.live_models)}")
+            except Exception as exc:
+                st.error(f"Не удалось получить список: {exc}")
+
+    with st.expander("🎛️ Модели и параметры (Vision / Audio / Guard)"):
+        selected_vision = st.selectbox("Vision-модель (картинки)", VISION_MODELS, index=0)
+        selected_stt = st.selectbox("Whisper STT (аудио)", STT_MODELS, index=0)
+        selected_guard = st.selectbox("Guard-модель (валидатор)", GUARD_MODELS, index=0)
+        enable_guard = st.checkbox("Проверять ввод через Guard-модель", value=False)
+        selected_tts = st.selectbox("Orpheus TTS (озвучка)", TTS_MODELS, index=0)
+        enable_tts = st.checkbox("Озвучивать итог проверки (TTS)", value=False)
+        language_pref = st.selectbox("Язык ответа", ["Авто", "Русский", "Українська", "English"], index=0)
+        temperature = st.number_input("Креативность (temperature)", min_value=0.0, max_value=0.7, value=0.2, step=0.05)
+
+    st.divider()
+    st.subheader("🧩 Скиллы ассистента")
+    selected_skills = st.multiselect(
+        "Активные навыки",
+        list(BUILTIN_SKILLS.keys()),
+        default=["🧪 Автотесты Python"],
+    )
+    with st.expander("➕ Добавить свой скилл"):
+        new_skill_name = st.text_input("Название скилла", placeholder="Например: Проверка PEP8")
+        new_skill_prompt = st.text_area("Инструкция скилла", height=70, placeholder="Что ассистент должен делать...")
+        if st.button("Сохранить скилл", use_container_width=True):
+            if new_skill_name.strip() and new_skill_prompt.strip():
+                st.session_state.custom_skills.append(
+                    {"name": new_skill_name.strip(), "prompt": new_skill_prompt.strip()}
+                )
+                st.success(f"Скилл «{new_skill_name.strip()}» добавлен!")
+            else:
+                st.warning("Заполните название и инструкцию.")
+
+    if st.session_state.custom_skills:
+        active_custom = st.multiselect(
+            "Мои скиллы",
+            [s["name"] for s in st.session_state.custom_skills],
+            default=[s["name"] for s in st.session_state.custom_skills],
+        )
+    else:
+        active_custom = []
 
     st.divider()
     preset_choice = st.selectbox("Шаблон критериев", list(CRITERIA_PRESETS.keys()), index=0)
-    if st.button("Подставить шаблон критериев", use_container_width=True):
+    c_p1, c_p2 = st.columns(2)
+    if c_p1.button("Применить", use_container_width=True):
         st.session_state.criteria_text_state = CRITERIA_PRESETS[preset_choice]
+    if c_p2.button("Пример задачи", use_container_width=True):
+        st.session_state.task_text_state = (
+            "Напиши функцию `is_palindrome(s: str) -> bool`, которая игнорирует пробелы и регистр.\n"
+            "```python\ndef is_palindrome(s):\n    return s == s[::-1]\n```"
+        )
+        st.session_state.criteria_text_state = CRITERIA_PRESETS["Лабораторная Python"]
 
     if st.session_state.history:
         st.divider()
-        st.subheader(f"История ({len(st.session_state.history)})")
+        st.subheader(f"🕘 История ({len(st.session_state.history)})")
         for idx, item in enumerate(st.session_state.history):
-            if st.button(f"{idx + 1}. {item['title'][:32]}", key=f"hist_{idx}", use_container_width=True):
+            if st.button(f"{idx + 1}. {item['title'][:28]}", key=f"hist_{idx}", use_container_width=True):
                 st.session_state.last_report = item["full_report"]
                 st.session_state.followup_chat = []
         if st.button("Очистить историю", use_container_width=True):
             st.session_state.history = []
 
-st.title("✅ Groq Assistant Pro — Проверка заданий")
-st.caption(
-    "Умная проверка кода, лабораторных, документов и скриншотов: режимы оценки, "
-    "изолированные автотесты с таймаутом, поддержка .zip и интерактивный чат по разбору."
+# --- Главная шапка ---
+st.markdown(
+    f"""
+<div class="hero-banner">
+  <div class="hero-title">✅ Groq Assistant Pro — Проверка заданий</div>
+  <p class="hero-sub">Интеллектуальная проверка кода, лабораторных, документов, аудио и скриншотов с валидатором и песочницей.</p>
+  <div class="pill-row">
+    <span class="pill">🤖 {html.escape(selected_model)}</span>
+    <span class="pill">🎯 {html.escape(review_mode)}</span>
+    <span class="pill">🧩 Скиллов: {len(selected_skills) + len(active_custom)}</span>
+    <span class="pill">🔑 {"Ключ активен" if active_key else "Нужен API-ключ"}</span>
+  </div>
+</div>
+""",
+    unsafe_allow_html=True,
 )
 
+# --- Форма ввода ---
 with st.form("main_check_form", clear_on_submit=False):
     col_left, col_right = st.columns([3, 2])
     with col_left:
         task_input = st.text_area(
             "Задание или решение на проверку",
+            value=st.session_state.task_text_state,
             height=210,
             placeholder="Вставьте условие задания, код, решение или вопрос...",
         )
@@ -1007,42 +1173,99 @@ with st.form("main_check_form", clear_on_submit=False):
         )
 
     uploaded_files = st.file_uploader(
-        "Файлы или ZIP-архив (код, текст, PDF, DOCX, CSV, JSON, SQL, скриншоты)",
+        "Файлы, ZIP-архив или аудио (код, PDF, DOCX, CSV, JSON, SQL, скриншоты, MP3/WAV)",
         accept_multiple_files=True,
         type=[
             "txt", "md", "py", "cs", "html", "css", "js", "ts", "jsx", "tsx",
             "csv", "json", "xml", "yaml", "yml", "toml", "sql", "java", "cpp", "c", "h",
-            "pdf", "docx", "zip", "png", "jpg", "jpeg", "webp",
+            "pdf", "docx", "zip", "png", "jpg", "jpeg", "webp", "mp3", "wav", "m4a", "ogg",
         ],
     )
 
-    c1, c2 = st.columns([1, 2])
-    with c1:
-        run_autotests = st.checkbox("Автотесты Python (с таймаутом 3с)", value=True)
-    with c2:
+    c_opt1, c_opt2 = st.columns([2, 1])
+    with c_opt1:
         custom_tests_input = st.text_input(
             "Свои assert-тесты (необязательно)",
-            placeholder="Например: assert solve([1, 2, 3]) == 6",
+            placeholder="Например: assert is_palindrome('А роза упала на лапу Азора') is True",
         )
+    with c_opt2:
+        st.write("")
+        st.write("")
+        run_autotests = "🧪 Автотесты Python" in selected_skills
 
-    submitted = st.form_submit_button("Проверить задание", type="primary", use_container_width=True)
+    btn_col1, btn_col2 = st.columns([1, 2])
+    with btn_col1:
+        validate_only = st.form_submit_button("🛡️ Только валидатор", use_container_width=True)
+    with btn_col2:
+        submitted = st.form_submit_button("🚀 Проверить задание", type="primary", use_container_width=True)
+
+if validate_only:
+    st.session_state.task_text_state = task_input
+    st.session_state.criteria_text_state = criteria_input
+    pre_val = validate_submission(
+        api_key=active_key,
+        task_text=task_input,
+        criteria_text=criteria_input,
+        uploaded_files=uploaded_files,
+        stt_model=selected_stt,
+    )
+    if enable_guard and active_key and pre_val["task_text"]:
+        g_ok, g_msg = run_guard_check(active_key, selected_guard, pre_val["task_text"])
+        if g_ok:
+            pre_val["checks"].append(g_msg)
+        else:
+            pre_val["warnings"].append(g_msg)
+    st.session_state.pre_validation = pre_val
+
+if st.session_state.pre_validation and not submitted:
+    pv = st.session_state.pre_validation
+    with st.container(border=True):
+        st.subheader("🛡️ Результат предварительного валидатора")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Статус", "Готово ✅" if pv["ok"] else "Есть ошибки ❌")
+        m2.metric("Предупреждения", len(pv["warnings"]))
+        m3.metric("Объём текста", f"{pv['total_chars']:,} симв.")
+        if pv["checks"]:
+            st.success(" | ".join(pv["checks"]))
+        for err in pv["errors"]:
+            st.error(err)
+        for warn in pv["warnings"]:
+            st.warning(warn)
 
 if submitted:
+    st.session_state.pre_validation = None
+    st.session_state.task_text_state = task_input
     st.session_state.criteria_text_state = criteria_input
+
     val = validate_submission(
         api_key=active_key,
         task_text=task_input,
         criteria_text=criteria_input,
         uploaded_files=uploaded_files,
+        stt_model=selected_stt,
     )
+
+    if enable_guard and active_key and val["task_text"]:
+        g_ok, g_msg = run_guard_check(active_key, selected_guard, val["task_text"])
+        if g_ok:
+            val["checks"].append(g_msg)
+        else:
+            val["warnings"].append(g_msg)
 
     autotest_reports: list[dict[str, Any]] = []
     answer = ""
     post_notes: list[str] = []
+    tts_audio: bytes | None = None
+
+    active_skill_prompts = [BUILTIN_SKILLS[k]["prompt"] for k in selected_skills if k in BUILTIN_SKILLS]
+    active_skill_prompts.extend(
+        s["prompt"] for s in st.session_state.custom_skills if s["name"] in active_custom
+    )
 
     if val["ok"] and active_key:
-        if run_autotests and val["py_candidates"]:
-            with st.spinner(f"Запускаю автотесты для {len(val['py_candidates'])} Python-модулей..."):
+        with st.status("Выполняю проверку...", expanded=False) as status:
+            if run_autotests and val["py_candidates"]:
+                st.write(f"Запуск автотестов ({len(val['py_candidates'])} мод.)...")
                 for cand_name, cand_code in val["py_candidates"][:5]:
                     rep = generate_and_run_tests(
                         api_key=active_key,
@@ -1053,19 +1276,21 @@ if submitted:
                         custom_tests=custom_tests_input,
                     )
                     autotest_reports.append(rep)
-        elif run_autotests:
-            autotest_reports.append(
-                {"ran": False, "summary": "Python-код не найден — автотесты не запускались.", "results": []}
-            )
+            elif run_autotests:
+                autotest_reports.append(
+                    {"ran": False, "summary": "Python-код не найден — автотесты не запускались.", "results": []}
+                )
 
-        with st.spinner("Анализирую решение, оформление и тесты..."):
+            st.write(f"Анализ через {selected_vision if val['images'] else selected_model}...")
             try:
                 raw_answer = run_evaluation(
                     api_key=active_key,
                     model_name=selected_model,
-                    temperature=temperature,
+                    vision_model_name=selected_vision,
+                    temperature=float(temperature),
                     mode_name=review_mode,
                     language_pref=language_pref,
+                    active_skills_prompts=active_skill_prompts,
                     profile=val["profile"],
                     task_text=val["task_text"],
                     criteria_text=val["criteria_text"],
@@ -1074,9 +1299,16 @@ if submitted:
                     autotest_reports=autotest_reports,
                 )
                 answer, post_notes = sanitize_output(raw_answer)
+                if enable_tts and answer:
+                    st.write(f"Озвучка ({selected_tts})...")
+                    tts_audio, tts_err = synthesize_tts(active_key, selected_tts, answer)
+                    if tts_err:
+                        post_notes.append(tts_err)
+                status.update(label="Проверка завершена ✅", state="complete")
             except Exception as exc:
                 val["errors"].append(f"Ошибка Groq API: {exc}")
                 val["ok"] = False
+                status.update(label="Ошибка при проверке ❌", state="error")
 
     preview_title = (
         val["task_text"][:60]
@@ -1093,6 +1325,7 @@ if submitted:
         "autotests": autotest_reports,
         "notes": post_notes,
         "answer": answer,
+        "tts_audio": tts_audio,
         "report_md": report_md,
         "report_html": report_html,
     }
@@ -1107,7 +1340,7 @@ active = st.session_state.last_report
 if active:
     val = active["val"]
     tab_review, tab_tests, tab_files, tab_export = st.tabs(
-        ["📋 Разбор и решение", "🧪 Автотесты", "📁 Файлы и контекст", "⬇️ Экспорт"]
+        ["📋 Разбор и решение", "🧪 Автотесты", "📁 Файлы и валидатор", "⬇️ Экспорт"]
     )
 
     with tab_review:
@@ -1120,6 +1353,9 @@ if active:
             st.warning(warn)
         for note in active.get("notes", []):
             st.warning(note)
+
+        if active.get("tts_audio"):
+            st.audio(active["tts_audio"], format="audio/wav")
 
         if active.get("answer"):
             st.markdown(active["answer"])
